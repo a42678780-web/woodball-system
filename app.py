@@ -1236,29 +1236,17 @@ if __name__ == "__main__":
     )
 from flask import jsonify
 
-@app.route("/api/personal")
-def api_personal():
-    try:
-        with open("output/personal.json", "r", encoding="utf-8") as f:
-            import json
-            data = json.load(f)
-        return jsonify(data)
-    except:
-        return jsonify([])
+@app.route("/output/personal.json")
+def personal():
+    with open("output/personal.json", "r", encoding="utf-8") as f:
+        return jsonify(json.load(f))
+
 @app.route("/output/double.json")
 def double():
-    try:
-        with open("output/double.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return jsonify(data)
-    except:
-        return jsonify([])
+    with open("output/double.json", "r", encoding="utf-8") as f:
+        return jsonify(json.load(f))
 
 @app.route("/output/rank.json")
 def rank():
-    try:
-        with open("output/rank.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return jsonify(data)
-    except:
-        return jsonify([])
+    with open("output/rank.json", "r", encoding="utf-8") as f:
+        return jsonify(json.load(f))
