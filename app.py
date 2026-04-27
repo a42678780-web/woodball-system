@@ -671,12 +671,25 @@ def output_personal_json_file():
 
 @app.route("/output/pair.json")
 def output_pair_json_file():
-    path = os.path.join(OUTPUT_DIR, "pair.json")
+    path = os.path.join(OUTPUT_DIR, "double.json")
 
     if not os.path.exists(path):
         return jsonify({
             "status": "error",
-            "message": "尚未輸出 pair.json，請先到後台按輸出"
+            "message": "尚未輸出 double.json，請先到後台按輸出"
+        }), 404
+
+    return send_file(path, mimetype="application/json")
+
+
+@app.route("/output/double.json")
+def output_double_json_file():
+    path = os.path.join(OUTPUT_DIR, "double.json")
+
+    if not os.path.exists(path):
+        return jsonify({
+            "status": "error",
+            "message": "尚未輸出 double.json，請先到後台按輸出"
         }), 404
 
     return send_file(path, mimetype="application/json")
@@ -684,12 +697,25 @@ def output_pair_json_file():
 
 @app.route("/output/ranking.json")
 def output_ranking_json_file():
-    path = os.path.join(OUTPUT_DIR, "ranking.json")
+    path = os.path.join(OUTPUT_DIR, "rank.json")
 
     if not os.path.exists(path):
         return jsonify({
             "status": "error",
-            "message": "尚未輸出 ranking.json，請先到後台按輸出"
+            "message": "尚未輸出 rank.json，請先到後台按輸出"
+        }), 404
+
+    return send_file(path, mimetype="application/json")
+
+
+@app.route("/output/rank.json")
+def output_rank_json_file():
+    path = os.path.join(OUTPUT_DIR, "rank.json")
+
+    if not os.path.exists(path):
+        return jsonify({
+            "status": "error",
+            "message": "尚未輸出 rank.json，請先到後台按輸出"
         }), 404
 
     return send_file(path, mimetype="application/json")
@@ -1025,11 +1051,11 @@ def api_output_pair_json():
         lower_row
     ]
 
-    save_json_output("pair.json", output_data)
+    save_json_output("double.json", output_data)
 
     return jsonify({
         "status": "success",
-        "file": "/output/pair.json"
+        "file": "/output/double.json"
     })
 
 
@@ -1055,11 +1081,11 @@ def api_output_ranking_json():
 
     rows = ranking_json_rows(course, group_name)
 
-    save_json_output("ranking.json", rows)
+    save_json_output("rank.json", rows)
 
     return jsonify({
         "status": "success",
-        "file": "/output/ranking.json",
+        "file": "/output/rank.json",
         "count": len(rows)
     })
 
@@ -1223,30 +1249,10 @@ def handle_submit_score(data):
 
 
 if __name__ == "__main__":
-    import os
-
-    port = int(os.environ.get("PORT", 5000))
-
     socketio.run(
         app,
         host="0.0.0.0",
-        port=port,
+        port=5000,
         debug=True,
         allow_unsafe_werkzeug=True
     )
-from flask import jsonify
-
-@app.route("/output/personal.json")
-def personal():
-    with open("output/personal.json", "r", encoding="utf-8") as f:
-        return jsonify(json.load(f))
-
-@app.route("/output/double.json")
-def double():
-    with open("output/double.json", "r", encoding="utf-8") as f:
-        return jsonify(json.load(f))
-
-@app.route("/output/rank.json")
-def rank():
-    with open("output/rank.json", "r", encoding="utf-8") as f:
-        return jsonify(json.load(f))
