@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>裁判端 - 成績編輯</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background:#f8f9fa; }
+        .page { max-width: 680px; margin: 0 auto; padding: 12px; }
+        .score-num { font-size: 2.2rem; font-weight: 800; min-width: 72px; text-align:center; }
+        .score-btn { width: 56px; height: 56px; font-size: 1.7rem; font-weight: 800; border-radius: 50%; }
+        .score-input { width: 86px; text-align:center; font-size: 1.4rem; font-weight: 700; }
+        .player-card { border-left: 6px solid #198754; }
+        .hole-select { font-size:1.25rem; font-weight:700; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <a href="/referee/select/{{ match_filename }}" class="btn btn-outline-secondary btn-sm">← 重選選手</a>
+        <a href="/referee/overview/{{ match_filename }}" class="btn btn-outline-primary btn-sm">總覽</a>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h5 class="fw-bold mb-2">{{ course.match_name }}</h5>
+            <label class="form-label fw-bold">第三頁：球道選擇</label>
+            <select class="form-select form-select-lg hole-select" id="holeSelect" onchange="changeHole()">
+                {% for i in range(1, 13) %}
+                <option value="{{ i }}">H{{ i }}</option>
+                {% endfor %}
+            </select>
+
+            <div class="row text-center mt-3">
+                <div class="col-6">
+                    <div class="text-muted small">PAR</div>
+                    <div class="fs-4 fw-bold" id="holePar">-</div>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small">距離</div>
+                    <div class="fs-4 fw-bold" id="holeDistance">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% for p in players %}
+    <div class="card shadow-sm mb-3 player-card" data-player-id="{{ p.id }}">
+        <div class="card-body">
+            <div class="fw-bold fs-5">{{ p.number }}｜{{ p.name }}</div>
+            <div class="small text-muted mb-3">{{ p.city }}｜{{ p.school }}｜{{ p.group }}</div>
+
+            <div class="d-flex align-items-center justify-content-between">
+                <button class="btn btn-danger score-btn" onclick="changeScore('{{ p.id }}', -1)">-</button>
+
+                <div>
+                    <input type="number"
+                           class="form-control score-input"
+                           id="scoreInput_{{ p.id }}"
+                           value="0"
+                           min="0"
+                           oninput="manualScore('{{ p.id }}', this.value)">
+                </div>
+
+                <button class="btn btn-primary score-btn" onclick="changeScore('{{ p.id }}', 1)">+</button>
+            </div>
+
+            <div class="small text-center text-success mt-2" id="status_{{ p.id }}">自動儲存</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+const matchFilename = "{{ match_filename }}";
+const selectedPlayers = [
+    {% for p in players %}
+    "{{ p.id }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+let savingTimers = {};
+
+document.addEventListener("DOMContentLoaded", function() {
+    changeHole();
+});
+
+function currentHole() {
+    return document.getElementById('holeSelect').value;
+}
+
+function setStatus(playerId, text) {
+    const el = document.getElementById(`status_${playerId}`);
+    if (el) el.innerText = text;
+}
+
+function clampScore(value) {
+    let n = parseInt(value);
+    if (isNaN(n) || n < 0) n = 0;
+    return n;
+}
+
+function changeHole() {
+    const hole = currentHole();
+
+    fetch('/api/referee_hole_info', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            match_filename: matchFilename,
+            hole: hole
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('holePar').innerText = data.par || '-';
+            document.getElementById('holeDistance').innerText = data.distance ? data.distance + 'M' : '-';
+        }
+    });
+
+    selectedPlayers.forEach(playerId => {
+        fetch('/api/referee_get_score', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                match_filename: matchFilename,
+                player_id: playerId,
+                hole: hole
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            const input = document.getElementById(`scoreInput_${playerId}`);
+            if (input) input.value = data.status === 'success' ? clampScore(data.score) : 0;
+            setStatus(playerId, '自動儲存');
+        });
+    });
+}
+
+function changeScore(playerId, delta) {
+    const input = document.getElementById(`scoreInput_${playerId}`);
+    let value = clampScore(input.value);
+    value += delta;
+    if (value < 0) value = 0;
+    input.value = value;
+    saveScore(playerId, value);
+}
+
+function manualScore(playerId, value) {
+    const input = document.getElementById(`scoreInput_${playerId}`);
+    const score = clampScore(value);
+    input.value = score;
+
+    clearTimeout(savingTimers[playerId]);
+    savingTimers[playerId] = setTimeout(() => {
+        saveScore(playerId, score);
+    }, 250);
+}
+
+function saveScore(playerId, score) {
+    setStatus(playerId, '儲存中...');
+
+    fetch('/api/referee_update_score', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            match_filename: matchFilename,
+            player_id: playerId,
+            hole: currentHole(),
+            score: score
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const input = document.getElementById(`scoreInput_${playerId}`);
+            if (input) input.value = clampScore(data.score);
+            setStatus(playerId, '已儲存');
+        } else {
+            setStatus(playerId, '儲存失敗');
+            alert(data.message || '儲存失敗');
+        }
+    })
+    .catch(() => {
+        setStatus(playerId, '連線失敗');
+    });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>木球賽事後台管理系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .nav-pills .nav-link.active { background-color: #1e8e5e; font-weight: bold; }
+        .nav-pills .nav-link { color: #495057; border: 1px solid #dee2e6; margin: 0 5px; border-radius: 20px; }
+        .card { border-radius: 12px; border: 1px solid #e9ecef; box-shadow: 0 4px 6px rgba(0,0,0,0.03); }
+        .text-woodball { color: #1e8e5e; }
+        .hole-input { min-width: 60px; max-width: 80px; }
+        .form-label { font-size: 0.9rem; font-weight: 600; color: #495057; }
+        .edit-input { min-width: 110px; }
+        .preview-table th, .preview-table td { font-size: 0.85rem; vertical-align: middle; }
+    </style>
+</head>
+
+<body class="p-4">
+<div class="container" style="max-width: 1500px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-woodball m-0">🏆 木球賽事管理中心</h3>
+        <div class="text-end">
+            <span class="text-success small fw-bold">● 系統運作中</span><br>
+            <small class="text-muted">目前運作賽事：{{ course.match_name }}</small><br>
+            <a href="/referee" class="btn btn-sm btn-outline-success mt-2">裁判端入口</a>
+        </div>
+    </div>
+
+    <ul class="nav nav-pills mb-4" id="adminTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab1">1. 建立與切換賽事</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab2">2. 編輯賽事與名單</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab3">3. 輸出控制</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab4">4. 總覽資料</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab5">5. 成績編輯</button></li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab1">
+            <div class="card p-4 mb-4 border-success border-opacity-50 border-2">
+                <h5 class="fw-bold text-success mb-3">➕ 建立全新賽事</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">賽事名稱</label>
+                        <input type="text" id="newMatchName" class="form-control" placeholder="例如：115全中運木球賽">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">賽制</label>
+                        <select id="newMatchType" class="form-select">
+                            <option value="桿數賽">桿數賽</option>
+                            <option value="球道賽">球道賽</option>
+                        </select>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button class="btn btn-success px-4 fw-bold" onclick="createNewMatch()">建立並進入此賽事</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-4 border-primary border-opacity-25">
+                <h5 class="fw-bold mb-3 text-primary">📂 載入或移除現有賽事</h5>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label">選擇歷史賽事</label>
+                        <select class="form-select" id="existingMatchSelect">
+                            {% for m in all_matches %}
+                            <option value="{{ m.filename }}" {% if m.filename == current_file %}selected{% endif %}>
+                                {{ m.name }} {% if m.filename == current_file %}(目前運作中){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3"><button class="btn btn-outline-primary w-100 fw-bold" onclick="loadExistingMatch()">📂 載入並進入</button></div>
+                    <div class="col-md-3"><button class="btn btn-danger w-100 fw-bold" onclick="deleteExistingMatch()">🗑️ 刪除此賽事</button></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab2">
+            <div class="alert alert-warning mb-4 shadow-sm border-warning">
+                <strong>目前編輯中的賽事：</strong> {{ course.match_name }}
+                <span class="badge bg-success ms-2">{{ course.match_type }}</span>
+            </div>
+
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-3">編輯球道 PAR 與距離，12 洞</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center align-middle text-nowrap">
+                        <tr class="table-light">
+                            <th>球道</th>
+                            {% for i in range(1, 13) %}<th>第 {{ i }} 洞</th>{% endfor %}
+                        </tr>
+                        <tr>
+                            <th class="table-light">標準桿 PAR</th>
+                            {% for i in range(1, 13) %}
+                            <td><input type="number" id="par{{ i }}" class="form-control text-center hole-input mx-auto" value="{{ course.holes[i|string].par }}"></td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <th class="table-light">距離 m</th>
+                            {% for i in range(1, 13) %}
+                            <td><input type="number" id="dist{{ i }}" class="form-control text-center hole-input mx-auto" value="{{ course.holes[i|string].distance }}"></td>
+                            {% endfor %}
+                        </tr>
+                    </table>
+                </div>
+                <button class="btn btn-outline-success mt-2" style="width: 200px;" onclick="updateCourseData()">💾 儲存 12 洞資料</button>
+            </div>
+
+            <div class="card p-4 mb-4 border-info border-2 border-opacity-50">
+                <h5 class="fw-bold mb-3 text-info">📂 批次匯入名單 CSV</h5>
+                <div class="alert alert-light small mb-3 border">
+                    請在 Excel 將檔案另存為 <strong>CSV UTF-8</strong>。<br>
+                    欄位順序必須為：<code>編號, 縣市, 學校, 組別, 選手1, 選手2, 選手3, 選手4</code>
+                </div>
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-9">
+                        <label class="form-label">選擇 CSV 檔案</label>
+                        <input type="file" id="csvFileInput" class="form-control" accept=".csv">
+                    </div>
+                    <div class="col-md-3"><button class="btn btn-info text-white w-100 fw-bold" onclick="uploadPlayersCSV()">📥 匯入名單</button></div>
+                </div>
+            </div>
+
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-3">手動新增參賽球員</h5>
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-2"><label class="form-label">編號</label><input type="text" id="newPlayerNumber" class="form-control" placeholder="編號"></div>
+                    <div class="col-md-2"><label class="form-label">縣市</label><input type="text" id="newPlayerCity" class="form-control" placeholder="縣市"></div>
+                    <div class="col-md-2"><label class="form-label">學校</label><input type="text" id="newPlayerSchool" class="form-control" placeholder="學校"></div>
+                    <div class="col-md-2"><label class="form-label">組別</label><input type="text" id="newPlayerGroup" class="form-control" placeholder="組別"></div>
+                    <div class="col-md-2"><label class="form-label">姓名</label><input type="text" id="newPlayerName" class="form-control" placeholder="姓名"></div>
+                    <div class="col-md-2"><button class="btn btn-success w-100 fw-bold" onclick="addNewPlayer()">➕ 加入名單</button></div>
+                </div>
+            </div>
+
+            <div class="card p-4 mb-4 border-warning border-opacity-50 border-2">
+                <h5 class="fw-bold mb-3 text-warning">✏️ 管理已報名球員</h5>
+                <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                    <table class="table table-hover align-middle text-nowrap border">
+                        <thead class="table-light sticky-top shadow-sm">
+                            <tr>
+                                <th>編號</th><th>縣市</th><th>學校</th><th>組別</th><th>姓名</th><th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for player in players %}
+                            <tr>
+                                <td><input type="text" class="form-control edit-input" id="edit-number-{{ player.id }}" value="{{ player.number }}"></td>
+                                <td><input type="text" class="form-control edit-input" id="edit-city-{{ player.id }}" value="{{ player.city }}"></td>
+                                <td><input type="text" class="form-control edit-input" id="edit-school-{{ player.id }}" value="{{ player.school }}"></td>
+                                <td><input type="text" class="form-control edit-input" id="edit-group-{{ player.id }}" value="{{ player.group }}"></td>
+                                <td><input type="text" class="form-control edit-input" id="edit-name-{{ player.id }}" value="{{ player.name }}"></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-primary me-1 fw-bold" onclick="savePlayerEdit('{{ player.id }}')">💾 儲存</button>
+                                    <button class="btn btn-sm btn-danger fw-bold" onclick="removePlayer('{{ player.id }}', '{{ player.name }}')">🗑️ 移除</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not players %}
+                            <tr><td colspan="6" class="text-center text-muted py-4">目前尚無球員資料</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab3">
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-4">輸出控制 - {{ course.match_name }}</h5>
+
+                <script>
+                    const allPlayers = {{ players|tojson }};
+                    const holeData = {{ course.holes|tojson }};
+                    const currentMatchName = "{{ course.match_name }}";
+                    const currentMatchType = "{{ course.match_type }}";
+                </script>
+
+                <div class="row g-4">
+                    <div class="col-md-6 border-end">
+                        <h6 class="fw-bold text-success mb-3">個人 JSON 輸出</h6>
+
+                        <label class="form-label">選擇洞數</label>
+                        <select class="form-select mb-3" id="personalHole" onchange="updatePersonalPreview()">
+                            {% for i in range(1, 13) %}<option value="{{ i }}">H{{ i }}</option>{% endfor %}
+                        </select>
+
+                        <label class="form-label">選擇選手</label>
+                        <select class="form-select mb-3" id="personalPlayer" onchange="updatePersonalPreview()">
+                            {% for player in players %}
+                            <option value="{{ player.id }}">{{ player.number }}｜{{ player.city }}｜{{ player.school }}｜{{ player.group }}｜{{ player.name }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <div class="table-responsive mb-3">
+                            <table class="table table-bordered table-sm preview-table text-nowrap">
+                                <thead class="table-light">
+                                    <tr><th>賽事</th><th>洞數</th><th>PAR</th><th>距離</th><th>總桿</th><th>±</th><th>當下</th><th>組別</th><th>編號</th><th>縣市</th><th>學校</th><th>選手</th></tr>
+                                </thead>
+                                <tbody id="personalPreviewBody"></tbody>
+                            </table>
+                        </div>
+
+                        <button class="btn btn-success w-100 fw-bold" onclick="outputPersonalJson()">產生 personal.json</button>
+                        <div class="small text-muted mt-2">網址：<code>http://127.0.0.1:5000/output/personal.json</code></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-warning mb-3">雙人上下 JSON 輸出</h6>
+
+                        <label class="form-label">選擇洞數</label>
+                        <select class="form-select mb-3" id="pairHole" onchange="updatePairPreview()">
+                            {% for i in range(1, 13) %}<option value="{{ i }}">H{{ i }}</option>{% endfor %}
+                        </select>
+
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label">上方組別</label>
+                                <select class="form-select mb-3" id="upperGroup" onchange="refreshPairPlayers('upper')">
+                                    {% for g in groups %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">上方選手</label>
+                                <select class="form-select mb-3" id="upperPlayer" onchange="updatePairPreview()"></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">下方組別</label>
+                                <select class="form-select mb-3" id="lowerGroup" onchange="refreshPairPlayers('lower')">
+                                    {% for g in groups %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">下方選手</label>
+                                <select class="form-select mb-3" id="lowerPlayer" onchange="updatePairPreview()"></select>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mb-3">
+                            <table class="table table-bordered table-sm preview-table text-nowrap">
+                                <thead class="table-light">
+                                    <tr><th>位置</th><th>洞數</th><th>PAR</th><th>距離</th><th>總桿</th><th>±</th><th>當下</th><th>組別</th><th>編號</th><th>縣市</th><th>學校</th><th>選手</th></tr>
+                                </thead>
+                                <tbody id="pairPreviewBody"></tbody>
+                            </table>
+                        </div>
+
+                        <button class="btn btn-warning w-100 fw-bold" onclick="outputPairJson()">產生 pair.json</button>
+                        <div class="small text-muted mt-2">網址：<code>http://127.0.0.1:5000/output/pair.json</code></div>
+                    </div>
+
+                    <div class="col-12"><hr></div>
+
+                    <div class="col-md-12">
+                        <h6 class="fw-bold text-primary mb-3">團體排行 JSON 輸出</h6>
+
+                        <label class="form-label">選擇賽事</label>
+                        <select class="form-select mb-3" id="rankingMatch">
+                            {% for m in all_matches %}
+                            <option value="{{ m.filename }}" {% if m.filename == current_file %}selected{% endif %}>
+                                {{ m.name }}{% if m.filename == current_file %}（目前運作中）{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+
+                        <label class="form-label">選擇賽項 / 組別</label>
+                        <select class="form-select mb-3" id="rankingGroup">
+                            <option value="all">全部賽項</option>
+                            {% for g in groups %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+                        </select>
+
+                        <button class="btn btn-primary w-100 fw-bold" onclick="outputRankingJson()">產生 ranking.json</button>
+                        <div class="small text-muted mt-2">網址：<code>http://127.0.0.1:5000/output/ranking.json</code></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab4">
+            <div class="card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">總覽資料 - {{ course.match_name }}</h5>
+                    <div class="btn-group">
+                        <button id="btnPersonal" class="btn btn-success btn-sm fw-bold" onclick="showPersonalView()">個人版</button>
+                        <button id="btnTeam" class="btn btn-outline-success btn-sm fw-bold" onclick="showTeamView()">團體版</button>
+                    </div>
+                </div>
+
+                <div id="personalView">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mt-2 border text-nowrap">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>編號</th>
+                                    <th>縣市</th>
+                                    <th>學校</th>
+                                    <th>組別</th>
+                                    <th>選手</th>
+                                    {% for i in range(1, 13) %}
+                                    <th>H{{ i }}</th>
+                                    {% endfor %}
+                                    <th>總桿</th>
+                                    <th>±</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for player in players %}
+                                <tr>
+                                    <td>{{ player.number }}</td>
+                                    <td>{{ player.city }}</td>
+                                    <td>{{ player.school }}</td>
+                                    <td>{{ player.group }}</td>
+                                    <td class="fw-bold">{{ player.name }}</td>
+                                    {% for i in range(1, 13) %}
+                                    <td>{{ player.scores[i|string] if player.scores and i|string in player.scores else "" }}</td>
+                                    {% endfor %}
+                                    <td class="fw-bold">{{ player.total }}</td>
+                                    <td class="fw-bold">{{ player.plus_minus }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% if not players %}<tr><td colspan="19" class="text-center text-muted py-4">目前尚無球員資料</td></tr>{% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="teamView" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mt-2 border text-nowrap">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>編號</th>
+                                    <th>縣市</th>
+                                    <th>學校</th>
+                                    <th>組別</th>
+                                    <th>選手1</th>
+                                    <th>選手2</th>
+                                    <th>選手3</th>
+                                    <th>選手4</th>
+                                    <th>總桿</th>
+                                    <th>±</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for team in team_rows %}
+                                <tr>
+                                    <td>{{ team.number }}</td>
+                                    <td>{{ team.city }}</td>
+                                    <td>{{ team.school }}</td>
+                                    <td>{{ team.group }}</td>
+                                    <td class="fw-bold">{{ team.player1 }}</td>
+                                    <td class="fw-bold">{{ team.player2 }}</td>
+                                    <td class="fw-bold">{{ team.player3 }}</td>
+                                    <td class="fw-bold">{{ team.player4 }}</td>
+                                    <td class="fw-bold">{{ team.total_score }}</td>
+                                    <td class="fw-bold">{{ team.plus_minus }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% if not team_rows %}<tr><td colspan="10" class="text-center text-muted py-4">目前尚無團體資料</td></tr>{% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab5">
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-3">✏️ 成績編輯（12洞）</h5>
+                <div class="table-responsive" style="max-height: 650px; overflow: auto;">
+                    <table class="table table-bordered text-center text-nowrap align-middle">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>編號</th>
+                                <th>縣市</th>
+                                <th>學校</th>
+                                <th>組別</th>
+                                <th>選手</th>
+                                {% for i in range(1, 13) %}
+                                <th>H{{ i }}</th>
+                                {% endfor %}
+                                <th>總桿</th>
+                                <th>±</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in players %}
+                            <tr>
+                                <td>{{ p.number }}</td>
+                                <td>{{ p.city }}</td>
+                                <td>{{ p.school }}</td>
+                                <td>{{ p.group }}</td>
+                                <td class="fw-bold">{{ p.name }}</td>
+                                {% for i in range(1, 13) %}
+                                <td>
+                                    <input type="number"
+                                           class="form-control form-control-sm text-center score-edit"
+                                           style="width: 70px;"
+                                           data-player-id="{{ p.id }}"
+                                           data-hole="{{ i }}"
+                                           value="{{ p.scores[i|string] if p.scores and i|string in p.scores else '' }}">
+                                </td>
+                                {% endfor %}
+                                <td class="fw-bold">{{ p.total }}</td>
+                                <td class="fw-bold">{{ p.plus_minus }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% if not players %}
+                            <tr><td colspan="19" class="text-center text-muted py-4">目前尚無球員資料</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-grid gap-2 mt-3">
+                    <button class="btn btn-success fw-bold" onclick="saveAllScores()">💾 儲存所有成績並重新整理</button>
+                </div>
+
+                <div class="alert alert-light border small mt-3 mb-0">
+                    修改完成後請按「儲存所有成績並重新整理」；若要更新 vMix JSON，請再到第 3 頁重新按輸出。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+<script>
+const socket = io();
+
+document.addEventListener("DOMContentLoaded", function() {
+    let activeTab = localStorage.getItem('activeTab');
+
+    if (activeTab) {
+        const btn = document.querySelector(`button[data-bs-target="${activeTab}"]`);
+        if (btn) new bootstrap.Tab(btn).show();
+    }
+
+    document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(btn => {
+        btn.addEventListener('shown.bs.tab', function(event) {
+            localStorage.setItem('activeTab', event.target.getAttribute('data-bs-target'));
+        });
+    });
+
+    refreshPairPlayers('upper');
+    refreshPairPlayers('lower');
+    updatePersonalPreview();
+    updatePairPreview();
+});
+
+socket.on('leaderboard_update', () => {
+    const active = document.querySelector('.nav-link.active');
+    if (active) localStorage.setItem('activeTab', active.getAttribute('data-bs-target'));
+    window.location.reload();
+});
+
+function createNewMatch() {
+    const matchName = document.getElementById('newMatchName').value.trim();
+    const matchType = document.getElementById('newMatchType').value;
+    if (!matchName) { alert('請輸入賽事名稱'); return; }
+
+    fetch('/api/create_match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_name: matchName, match_type: matchType })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') { localStorage.setItem('activeTab', '#tab2'); window.location.reload(); }
+        else alert(data.message);
+    });
+}
+
+function loadExistingMatch() {
+    const filename = document.getElementById('existingMatchSelect').value;
+
+    fetch('/api/load_match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: filename })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') { localStorage.setItem('activeTab', '#tab2'); window.location.reload(); }
+        else alert(data.message);
+    });
+}
+
+function deleteExistingMatch() {
+    const select = document.getElementById('existingMatchSelect');
+    if (!select.value) { alert('沒有可刪除的賽事'); return; }
+    if (!confirm(`確定要永久刪除賽事「${select.options[select.selectedIndex].text.trim()}」嗎？`)) return;
+
+    fetch('/api/delete_match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: select.value })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') { localStorage.setItem('activeTab', '#tab1'); window.location.reload(); }
+        else alert(data.message);
+    });
+}
+
+function updateCourseData() {
+    const holesData = {};
+    for (let i = 1; i <= 12; i++) {
+        holesData[i.toString()] = {
+            par: parseInt(document.getElementById(`par${i}`).value) || 4,
+            distance: parseInt(document.getElementById(`dist${i}`).value) || 60
+        };
+    }
+
+    fetch('/api/update_course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ holes: holesData })
+    }).then(() => alert('12 洞球道資料已儲存'));
+}
+
+function addNewPlayer() {
+    const number = document.getElementById('newPlayerNumber').value.trim();
+    const city = document.getElementById('newPlayerCity').value.trim();
+    const school = document.getElementById('newPlayerSchool').value.trim();
+    const group = document.getElementById('newPlayerGroup').value.trim();
+    const name = document.getElementById('newPlayerName').value.trim();
+
+    if (!name || !group) { alert('姓名與組別為必填'); return; }
+
+    fetch('/api/add_player', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number, city, school, group, name })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') { localStorage.setItem('activeTab', '#tab2'); window.location.reload(); }
+        else alert(data.message);
+    });
+}
+
+function savePlayerEdit(playerId) {
+    const number = document.getElementById(`edit-number-${playerId}`).value.trim();
+    const city = document.getElementById(`edit-city-${playerId}`).value.trim();
+    const school = document.getElementById(`edit-school-${playerId}`).value.trim();
+    const group = document.getElementById(`edit-group-${playerId}`).value.trim();
+    const name = document.getElementById(`edit-name-${playerId}`).value.trim();
+
+    fetch('/api/edit_player', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId, number, city, school, group, name })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') { localStorage.setItem('activeTab', '#tab2'); window.location.reload(); }
+        else alert('更新失敗：' + data.message);
+    });
+}
+
+function removePlayer(playerId, playerName) {
+    if (!confirm(`確定要刪除球員「${playerName}」嗎？\n移除後該球員的所有成績會消失。`)) return;
+
+    fetch('/api/delete_player', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') { localStorage.setItem('activeTab', '#tab2'); window.location.reload(); }
+    });
+}
+
+function uploadPlayersCSV() {
+    const fileInput = document.getElementById('csvFileInput');
+    if (fileInput.files.length === 0) { alert('請先選擇一個 CSV 檔案'); return; }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    fetch('/api/upload_players', { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(`名單批次匯入成功，共匯入 ${data.count} 位球員`);
+            localStorage.setItem('activeTab', '#tab2');
+            window.location.reload();
+        } else alert('匯入失敗：\n' + data.message);
+    }).catch(err => alert('系統連線錯誤：' + err));
+}
+
+function getPlayerById(playerId) {
+    return allPlayers.find(p => String(p.id) === String(playerId));
+}
+
+function buildOutputRow(playerId, hole) {
+    const p = getPlayerById(playerId);
+    const h = String(hole);
+    const holeInfo = holeData[h] || {};
+    const scores = p && p.scores ? p.scores : {};
+    if (!p) return null;
+
+    return {
+        match_name: currentMatchName || "-",
+        match_type: currentMatchType || "-",
+        hole: "H" + h,
+        par: holeInfo.par || 0,
+        distance: holeInfo.distance ? String(holeInfo.distance) + "M" : "-",
+        total_score: p.total || 0,
+        plus_minus: p.plus_minus || "",
+        current_score: scores[h] || 0,
+        group: p.group || "-",
+        number: p.number || "-",
+        city: p.city || "-",
+        school: p.school || "-",
+        player_name: p.name || "-"
+    };
+}
+
+function updatePersonalPreview() {
+    const playerId = document.getElementById('personalPlayer')?.value;
+    const hole = document.getElementById('personalHole')?.value;
+    const body = document.getElementById('personalPreviewBody');
+    if (!body || !playerId || !hole) return;
+
+    const r = buildOutputRow(playerId, hole);
+    if (!r) {
+        body.innerHTML = `<tr><td colspan="12" class="text-center text-muted">無資料</td></tr>`;
+        return;
+    }
+
+    body.innerHTML = `
+        <tr>
+            <td>${r.match_name}</td><td>${r.hole}</td><td>${r.par}</td><td>${r.distance}</td>
+            <td>${r.total_score}</td><td>${r.plus_minus}</td><td>${r.current_score}</td><td>${r.group}</td><td>${r.number}</td>
+            <td>${r.city}</td><td>${r.school}</td><td class="fw-bold">${r.player_name}</td>
+        </tr>`;
+}
+
+function refreshPairPlayers(position) {
+    const groupSelect = document.getElementById(position + 'Group');
+    const playerSelect = document.getElementById(position + 'Player');
+    if (!groupSelect || !playerSelect) return;
+
+    const group = groupSelect.value;
+    const list = allPlayers.filter(p => p.group === group);
+    playerSelect.innerHTML = "";
+
+    list.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = `${p.number}｜${p.city}｜${p.school}｜${p.group}｜${p.name}`;
+        playerSelect.appendChild(opt);
+    });
+
+    updatePairPreview();
+}
+
+function updatePairPreview() {
+    const hole = document.getElementById('pairHole')?.value;
+    const upperId = document.getElementById('upperPlayer')?.value;
+    const lowerId = document.getElementById('lowerPlayer')?.value;
+    const body = document.getElementById('pairPreviewBody');
+    if (!body) return;
+
+    const upper = buildOutputRow(upperId, hole);
+    const lower = buildOutputRow(lowerId, hole);
+
+    if (!upper || !lower) {
+        body.innerHTML = `<tr><td colspan="12" class="text-center text-muted">請選擇上下選手</td></tr>`;
+        return;
+    }
+
+    body.innerHTML = `
+        <tr>
+            <td class="fw-bold">上</td><td>${upper.hole}</td><td>${upper.par}</td><td>${upper.distance}</td>
+            <td>${upper.total_score}</td><td>${upper.plus_minus}</td><td>${upper.current_score}</td><td>${upper.group}</td><td>${upper.number}</td>
+            <td>${upper.city}</td><td>${upper.school}</td><td class="fw-bold">${upper.player_name}</td>
+        </tr>
+        <tr>
+            <td class="fw-bold">下</td><td>${lower.hole}</td><td>${lower.par}</td><td>${lower.distance}</td>
+            <td>${lower.total_score}</td><td>${lower.plus_minus}</td><td>${lower.current_score}</td><td>${lower.group}</td><td>${lower.number}</td>
+            <td>${lower.city}</td><td>${lower.school}</td><td class="fw-bold">${lower.player_name}</td>
+        </tr>`;
+}
+
+function outputPersonalJson() {
+    fetch('/api/output_personal_json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            player_id: document.getElementById('personalPlayer').value,
+            hole: document.getElementById('personalHole').value
+        })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') alert('已輸出：' + data.file);
+        else alert('輸出失敗：' + data.message);
+    });
+}
+
+function outputPairJson() {
+    fetch('/api/output_pair_json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            hole: document.getElementById('pairHole').value,
+            upper_player_id: document.getElementById('upperPlayer').value,
+            lower_player_id: document.getElementById('lowerPlayer').value
+        })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') alert('已輸出：' + data.file);
+        else alert('輸出失敗：' + data.message);
+    });
+}
+
+function outputRankingJson() {
+    const group = document.getElementById('rankingGroup').value;
+    const matchFilename = document.getElementById('rankingMatch') ? document.getElementById('rankingMatch').value : '';
+
+    fetch('/api/output_ranking_json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            group: group,
+            match_filename: matchFilename
+        })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') alert('已輸出：' + data.file + '\n筆數：' + data.count);
+        else alert('輸出失敗：' + (data.message || ''));
+    });
+}
+
+function updateScore(playerId, hole, value) {
+    fetch('/api/update_score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            player_id: playerId,
+            hole: hole,
+            score: value
+        })
+    }).then(res => res.json()).then(data => {
+        if (data.status !== 'success') alert('成績更新失敗');
+    });
+}
+
+
+function saveAllScores() {
+    const inputs = document.querySelectorAll('.score-edit');
+    const updates = [];
+
+    inputs.forEach(input => {
+        updates.push({
+            player_id: input.dataset.playerId,
+            hole: input.dataset.hole,
+            score: input.value
+        });
+    });
+
+    localStorage.setItem('activeTab', '#tab5');
+
+    fetch('/api/update_scores_bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates: updates })
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') {
+            window.location.reload();
+        } else {
+            alert('成績儲存失敗');
+        }
+    });
+}
+
+function showPersonalView() {
+    document.getElementById('personalView').style.display = 'block';
+    document.getElementById('teamView').style.display = 'none';
+    document.getElementById('btnPersonal').classList.add('btn-success');
+    document.getElementById('btnPersonal').classList.remove('btn-outline-success');
+    document.getElementById('btnTeam').classList.remove('btn-success');
+    document.getElementById('btnTeam').classList.add('btn-outline-success');
+}
+
+function showTeamView() {
+    document.getElementById('personalView').style.display = 'none';
+    document.getElementById('teamView').style.display = 'block';
+    document.getElementById('btnTeam').classList.add('btn-success');
+    document.getElementById('btnTeam').classList.remove('btn-outline-success');
+    document.getElementById('btnPersonal').classList.remove('btn-success');
+    document.getElementById('btnPersonal').classList.add('btn-outline-success');
+}
+</script>
+</body>
+</html>

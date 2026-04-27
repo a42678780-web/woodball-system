@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>裁判端 - 選擇選手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background:#f8f9fa; }
+        .page { max-width: 640px; margin: 0 auto; padding: 14px; }
+        .player-row { cursor:pointer; }
+        .player-check { width: 24px; height: 24px; }
+        .sticky-bottom-bar { position: sticky; bottom: 0; background:#f8f9fa; padding: 12px 0; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="/referee" class="btn btn-outline-secondary btn-sm">← 換賽事</a>
+        <span class="badge bg-success">{{ course.match_name }}</span>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="fw-bold mb-2">第二頁：勾選選手</h5>
+            <div class="text-muted small mb-3">最多勾選 4 位，勾選後進入計分頁。</div>
+
+            <div class="list-group">
+                {% for p in players %}
+                <label class="list-group-item player-row">
+                    <div class="d-flex align-items-center gap-3">
+                        <input class="form-check-input player-check" type="checkbox" value="{{ p.id }}" onchange="limitSelect(this)">
+                        <div>
+                            <div class="fw-bold">{{ p.number }}｜{{ p.name }}</div>
+                            <div class="small text-muted">{{ p.city }}｜{{ p.school }}｜{{ p.group }}</div>
+                        </div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="sticky-bottom-bar">
+                <button class="btn btn-success btn-lg w-100 fw-bold" onclick="goScorePage()">進入成績編輯</button>
+                <a class="btn btn-outline-primary w-100 mt-2" href="/referee/overview/{{ match_filename }}">查看全部人成績總覽</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function checkedBoxes() {
+    return Array.from(document.querySelectorAll('.player-check:checked'));
+}
+
+function limitSelect(box) {
+    const checked = checkedBoxes();
+    if (checked.length > 4) {
+        box.checked = false;
+        alert('最多只能勾選 4 位選手');
+    }
+}
+
+function goScorePage() {
+    const checked = checkedBoxes();
+
+    if (checked.length < 1) {
+        alert('請至少勾選 1 位選手');
+        return;
+    }
+
+    const ids = checked.map(x => x.value).join(',');
+    window.location.href = `/referee/score/{{ match_filename }}?players=${ids}`;
+}
+</script>
+</body>
+</html>

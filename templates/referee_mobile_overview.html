@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>裁判端 - 成績總覽</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background:#f8f9fa; }
+        .page { max-width: 900px; margin: 0 auto; padding: 12px; }
+        th, td { font-size: 0.86rem; vertical-align: middle; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="/referee/select/{{ match_filename }}" class="btn btn-outline-secondary btn-sm">← 回選手</a>
+        <span class="badge bg-success">{{ course.match_name }}</span>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">第四頁：全部人成績總覽</h5>
+
+            <div class="table-responsive">
+                <table class="table table-bordered text-center text-nowrap">
+                    <thead class="table-light">
+                        <tr>
+                            <th>編號</th>
+                            <th>選手</th>
+                            <th>組別</th>
+                            {% for i in range(1, 13) %}
+                            <th>H{{ i }}</th>
+                            {% endfor %}
+                            <th>總桿</th>
+                            <th>±</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in players %}
+                        <tr>
+                            <td>{{ p.number }}</td>
+                            <td class="fw-bold">{{ p.name }}</td>
+                            <td>{{ p.group }}</td>
+                            {% for i in range(1, 13) %}
+                            <td>{{ p.scores[i|string] if p.scores and i|string in p.scores else "" }}</td>
+                            {% endfor %}
+                            <td class="fw-bold">{{ p.total }}</td>
+                            <td class="fw-bold">{{ p.plus_minus }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="btn btn-outline-primary w-100 mt-2" onclick="window.location.reload()">重新整理</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,451 @@
+{
+    "match_name": "高中男子團體組",
+    "match_type": "桿數賽",
+    "created_at": "2026-04-25 00:52:37",
+    "holes": {
+        "1": {
+            "par": 4,
+            "distance": 60
+        },
+        "2": {
+            "par": 4,
+            "distance": 60
+        },
+        "3": {
+            "par": 4,
+            "distance": 60
+        },
+        "4": {
+            "par": 4,
+            "distance": 60
+        },
+        "5": {
+            "par": 4,
+            "distance": 60
+        },
+        "6": {
+            "par": 4,
+            "distance": 60
+        },
+        "7": {
+            "par": 4,
+            "distance": 60
+        },
+        "8": {
+            "par": 4,
+            "distance": 60
+        },
+        "9": {
+            "par": 4,
+            "distance": 60
+        },
+        "10": {
+            "par": 4,
+            "distance": 60
+        },
+        "11": {
+            "par": 4,
+            "distance": 60
+        },
+        "12": {
+            "par": 4,
+            "distance": 60
+        }
+    },
+    "players": {
+        "1": {
+            "number": "1",
+            "city": "屏東",
+            "name": "888",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {
+                "1": 6
+            }
+        },
+        "2": {
+            "number": "1",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {
+                "1": 7,
+                "2": 1,
+                "3": 1
+            }
+        },
+        "3": {
+            "number": "1",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {
+                "1": 8
+            }
+        },
+        "4": {
+            "number": "1",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "5": {
+            "number": "2",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "6": {
+            "number": "2",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "7": {
+            "number": "2",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "8": {
+            "number": "2",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "9": {
+            "number": "3",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "10": {
+            "number": "3",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "11": {
+            "number": "3",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "12": {
+            "number": "3",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "13": {
+            "number": "4",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "14": {
+            "number": "4",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "15": {
+            "number": "4",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "16": {
+            "number": "4",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "17": {
+            "number": "5",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "18": {
+            "number": "5",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "19": {
+            "number": "5",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "20": {
+            "number": "5",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "21": {
+            "number": "6",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "22": {
+            "number": "6",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "23": {
+            "number": "6",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "24": {
+            "number": "6",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "25": {
+            "number": "7",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "26": {
+            "number": "7",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "27": {
+            "number": "7",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "28": {
+            "number": "7",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "29": {
+            "number": "8",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "30": {
+            "number": "8",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "31": {
+            "number": "8",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "32": {
+            "number": "8",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "33": {
+            "number": "9",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {
+                "1": 10
+            }
+        },
+        "34": {
+            "number": "9",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "35": {
+            "number": "9",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "36": {
+            "number": "9",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "37": {
+            "number": "10",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "38": {
+            "number": "10",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "39": {
+            "number": "10",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "40": {
+            "number": "10",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "41": {
+            "number": "11",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "42": {
+            "number": "11",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "43": {
+            "number": "11",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "44": {
+            "number": "11",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "45": {
+            "number": "12",
+            "city": "屏東",
+            "name": "1",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "46": {
+            "number": "12",
+            "city": "屏東",
+            "name": "2",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "47": {
+            "number": "12",
+            "city": "屏東",
+            "name": "3",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        },
+        "48": {
+            "number": "12",
+            "city": "屏東",
+            "name": "4",
+            "school": "潮州國中",
+            "group": "A",
+            "scores": {}
+        }
+    }
+}
