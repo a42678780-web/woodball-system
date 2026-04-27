@@ -203,7 +203,7 @@
                         </div>
 
                         <button class="btn btn-success w-100 fw-bold" onclick="outputPersonalJson()">產生 personal.json</button>
-                        <div class="small text-muted mt-2">網址：<code>http://127.0.0.1:5000/output/personal.json</code></div>
+                        <div class="small text-muted mt-2">網址：<code id="urlPersonal"></code></div>
                     </div>
 
                     <div class="col-md-6">
@@ -246,8 +246,8 @@
                             </table>
                         </div>
 
-                        <button class="btn btn-warning w-100 fw-bold" onclick="outputPairJson()">產生 pair.json</button>
-                        <div class="small text-muted mt-2">網址：<code>http://127.0.0.1:5000/output/pair.json</code></div>
+                        <button class="btn btn-warning w-100 fw-bold" onclick="outputPairJson()">產生 double.json</button>
+                        <div class="small text-muted mt-2">網址：<code id="urlDouble"></code></div>
                     </div>
 
                     <div class="col-12"><hr></div>
@@ -270,8 +270,8 @@
                             {% for g in groups %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
                         </select>
 
-                        <button class="btn btn-primary w-100 fw-bold" onclick="outputRankingJson()">產生 ranking.json</button>
-                        <div class="small text-muted mt-2">網址：<code>http://127.0.0.1:5000/output/ranking.json</code></div>
+                        <button class="btn btn-primary w-100 fw-bold" onclick="outputRankingJson()">產生 rank.json</button>
+                        <div class="small text-muted mt-2">網址：<code id="urlRank"></code></div>
                     </div>
                 </div>
             </div>
@@ -444,6 +444,15 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
+    const baseUrl = window.location.origin;
+    const urlPersonal = document.getElementById('urlPersonal');
+    const urlDouble = document.getElementById('urlDouble');
+    const urlRank = document.getElementById('urlRank');
+
+    if (urlPersonal) urlPersonal.innerText = baseUrl + '/output/personal.json';
+    if (urlDouble) urlDouble.innerText = baseUrl + '/output/double.json';
+    if (urlRank) urlRank.innerText = baseUrl + '/output/rank.json';
+
     refreshPairPlayers('upper');
     refreshPairPlayers('lower');
     updatePersonalPreview();
@@ -451,9 +460,8 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 socket.on('leaderboard_update', () => {
-    const active = document.querySelector('.nav-link.active');
-    if (active) localStorage.setItem('activeTab', active.getAttribute('data-bs-target'));
-    window.location.reload();
+    // 裁判端更新成績時，後台不自動刷新。
+    // 如需查看最新資料，請手動按 F5 重新整理。
 });
 
 function createNewMatch() {
