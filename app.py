@@ -1234,3 +1234,14 @@ if __name__ == "__main__":
         debug=True,
         allow_unsafe_werkzeug=True
     )
+from flask import jsonify
+
+@app.route("/api/personal")
+def api_personal():
+    try:
+        with open("output/personal.json", "r", encoding="utf-8") as f:
+            import json
+            data = json.load(f)
+        return jsonify(data)
+    except:
+        return jsonify([])
