@@ -1245,3 +1245,20 @@ def api_personal():
         return jsonify(data)
     except:
         return jsonify([])
+@app.route("/output/double.json")
+def double():
+    try:
+        with open("output/double.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return jsonify(data)
+    except:
+        return jsonify([])
+
+@app.route("/output/rank.json")
+def rank():
+    try:
+        with open("output/rank.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return jsonify(data)
+    except:
+        return jsonify([])
