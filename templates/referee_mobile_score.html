@@ -12,7 +12,7 @@
         .score-input { width: 92px; text-align:center; font-size: 1.5rem; font-weight: 800; }
         .player-card { border-left: 6px solid #198754; }
         .hole-select { font-size:1.25rem; font-weight:700; }
-        .note-input { font-size: 1rem; }
+        .note-input { font-size: 0.9rem; min-height: 38px; padding: 4px 8px; }
         .mini-score-input { width: 58px; text-align:center; font-size: 1rem; font-weight:700; padding: 4px; }
         th, td { vertical-align: middle; }
         .sticky-top-card { position: sticky; top: 0; z-index: 5; }
@@ -49,7 +49,7 @@
     </div>
 
     <div class="alert alert-light border small">
-        此頁會自動儲存；備註可用來記錄衣服、帽子、特徵。下方「快速補前面球道」可直接修改已選選手 H1～H12。
+        此頁會自動儲存；下方可快速補 H1～H12 成績。
     </div>
 
     {% for p in players %}
@@ -58,13 +58,12 @@
             <div class="fw-bold fs-5">{{ p.number }}｜{{ p.name }}</div>
             <div class="small text-muted mb-2">{{ p.city }}｜{{ p.school }}｜{{ p.group }}</div>
 
-            <label class="form-label fw-bold">選手特徵備註</label>
-            <textarea class="form-control note-input mb-2"
+            <label class="form-label fw-bold small mb-1">特徵備註</label>
+            <textarea class="form-control note-input mb-1"
                       id="note_{{ p.id }}"
-                      rows="2"
-                      placeholder="例如：紅帽、黑外套、白鞋..."
+                      rows="1"
                       oninput="saveNoteDebounced('{{ p.id }}', this.value)">{{ p.referee_note if p.referee_note else "" }}</textarea>
-            <div class="small text-success mb-3" id="noteStatus_{{ p.id }}">備註自動儲存</div>
+            <div class="small text-muted mb-2" id="noteStatus_{{ p.id }}">自動儲存</div>
 
             <div class="d-flex align-items-center justify-content-between">
                 <button class="btn btn-danger score-btn" onclick="changeScore('{{ p.id }}', -1)">-</button>
