@@ -111,6 +111,7 @@ def load_course_by_filename(filename):
         player.setdefault("group", "")
         player.setdefault("name", "")
         player.setdefault("scores", {})
+        player.setdefault("referee_note", "")
 
     return course
 
@@ -563,6 +564,30 @@ def referee_mobile_overview(match_filename):
         course=course,
         players=players
     )
+
+
+@app.route("/api/referee_update_note", methods=["POST"])
+def api_referee_update_note():
+    data = request.get_json()
+
+    match_filename = data.get("match_filename", "")
+    player_id = str(data.get("player_id", ""))
+    note = str(data.get("note", ""))
+
+    path = os.path.join(MATCH_DIR, match_filename)
+
+    if not os.path.exists(path):
+        return jsonify({"status": "error", "message": "找不到賽事"})
+
+    course = load_course_by_filename(match_filename)
+
+    if player_id not in course["players"]:
+        return jsonify({"status": "error", "message": "找不到選手"})
+
+    course["players"][player_id]["referee_note"] = note
+    save_course(course, match_filename)
+
+    return jsonify({"status": "success", "note": note})
 
 
 @app.route("/api/referee_get_score", methods=["POST"])
