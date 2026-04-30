@@ -7,12 +7,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background:#f8f9fa; }
-        .page { max-width: 680px; margin: 0 auto; padding: 12px; }
-        .score-num { font-size: 2.2rem; font-weight: 800; min-width: 72px; text-align:center; }
-        .score-btn { width: 56px; height: 56px; font-size: 1.7rem; font-weight: 800; border-radius: 50%; }
-        .score-input { width: 86px; text-align:center; font-size: 1.4rem; font-weight: 700; }
+        .page { max-width: 760px; margin: 0 auto; padding: 12px; }
+        .score-btn { width: 58px; height: 58px; font-size: 1.8rem; font-weight: 800; border-radius: 50%; }
+        .score-input { width: 92px; text-align:center; font-size: 1.5rem; font-weight: 800; }
         .player-card { border-left: 6px solid #198754; }
         .hole-select { font-size:1.25rem; font-weight:700; }
+        .note-input { font-size: 1rem; }
+        .mini-score-input { width: 58px; text-align:center; font-size: 1rem; font-weight:700; padding: 4px; }
+        th, td { vertical-align: middle; }
+        .sticky-top-card { position: sticky; top: 0; z-index: 5; }
     </style>
 </head>
 <body>
@@ -22,10 +25,10 @@
         <a href="/referee/overview/{{ match_filename }}" class="btn btn-outline-primary btn-sm">總覽</a>
     </div>
 
-    <div class="card shadow-sm mb-3">
+    <div class="card shadow-sm mb-3 sticky-top-card">
         <div class="card-body">
             <h5 class="fw-bold mb-2">{{ course.match_name }}</h5>
-            <label class="form-label fw-bold">第三頁：球道選擇</label>
+            <label class="form-label fw-bold">球道選擇</label>
             <select class="form-select form-select-lg hole-select" id="holeSelect" onchange="changeHole()">
                 {% for i in range(1, 13) %}
                 <option value="{{ i }}">H{{ i }}</option>
@@ -45,31 +48,84 @@
         </div>
     </div>
 
+    <div class="alert alert-light border small">
+        此頁會自動儲存；備註可用來記錄衣服、帽子、特徵。下方「快速補前面球道」可直接修改已選選手 H1～H12。
+    </div>
+
     {% for p in players %}
     <div class="card shadow-sm mb-3 player-card" data-player-id="{{ p.id }}">
         <div class="card-body">
             <div class="fw-bold fs-5">{{ p.number }}｜{{ p.name }}</div>
-            <div class="small text-muted mb-3">{{ p.city }}｜{{ p.school }}｜{{ p.group }}</div>
+            <div class="small text-muted mb-2">{{ p.city }}｜{{ p.school }}｜{{ p.group }}</div>
+
+            <label class="form-label fw-bold">選手特徵備註</label>
+            <textarea class="form-control note-input mb-2"
+                      id="note_{{ p.id }}"
+                      rows="2"
+                      placeholder="例如：紅帽、黑外套、白鞋..."
+                      oninput="saveNoteDebounced('{{ p.id }}', this.value)">{{ p.referee_note if p.referee_note else "" }}</textarea>
+            <div class="small text-success mb-3" id="noteStatus_{{ p.id }}">備註自動儲存</div>
 
             <div class="d-flex align-items-center justify-content-between">
                 <button class="btn btn-danger score-btn" onclick="changeScore('{{ p.id }}', -1)">-</button>
 
-                <div>
-                    <input type="number"
-                           class="form-control score-input"
-                           id="scoreInput_{{ p.id }}"
-                           value="0"
-                           min="0"
-                           oninput="manualScore('{{ p.id }}', this.value)">
-                </div>
+                <input type="number"
+                       class="form-control score-input"
+                       id="scoreInput_{{ p.id }}"
+                       value="0"
+                       min="0"
+                       oninput="manualScore('{{ p.id }}', this.value)">
 
                 <button class="btn btn-primary score-btn" onclick="changeScore('{{ p.id }}', 1)">+</button>
             </div>
 
-            <div class="small text-center text-success mt-2" id="status_{{ p.id }}">自動儲存</div>
+            <div class="small text-center text-success mt-2" id="status_{{ p.id }}">成績自動儲存</div>
         </div>
     </div>
     {% endfor %}
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-2">快速補前面球道成績</h5>
+            <div class="small text-muted mb-3">可直接編輯已選選手 H1～H12，輸入後自動儲存。</div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered text-center text-nowrap align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>選手</th>
+                            {% for i in range(1, 13) %}
+                            <th>H{{ i }}</th>
+                            {% endfor %}
+                            <th>總桿</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in players %}
+                        <tr>
+                            <td class="fw-bold">{{ p.number }}｜{{ p.name }}</td>
+                            {% for i in range(1, 13) %}
+                            <td>
+                                <input type="number"
+                                       class="form-control mini-score-input"
+                                       min="0"
+                                       id="grid_{{ p.id }}_{{ i }}"
+                                       data-player-id="{{ p.id }}"
+                                       data-hole="{{ i }}"
+                                       value="{{ p.scores[i|string] if p.scores and i|string in p.scores else 0 }}"
+                                       oninput="manualGridScore('{{ p.id }}','{{ i }}',this.value)">
+                            </td>
+                            {% endfor %}
+                            <td class="fw-bold" id="gridTotal_{{ p.id }}">{{ p.total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="btn btn-outline-secondary w-100 mt-2" onclick="window.location.reload()">重新整理此頁</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -81,9 +137,12 @@ const selectedPlayers = [
 ];
 
 let savingTimers = {};
+let noteTimers = {};
+let gridTimers = {};
 
 document.addEventListener("DOMContentLoaded", function() {
     changeHole();
+    selectedPlayers.forEach(playerId => updateGridTotal(playerId));
 });
 
 function currentHole() {
@@ -95,10 +154,41 @@ function setStatus(playerId, text) {
     if (el) el.innerText = text;
 }
 
+function setNoteStatus(playerId, text) {
+    const el = document.getElementById(`noteStatus_${playerId}`);
+    if (el) el.innerText = text;
+}
+
 function clampScore(value) {
     let n = parseInt(value);
     if (isNaN(n) || n < 0) n = 0;
     return n;
+}
+
+function updateGridTotal(playerId) {
+    let total = 0;
+    for (let i = 1; i <= 12; i++) {
+        const input = document.getElementById(`grid_${playerId}_${i}`);
+        if (!input) continue;
+        total += clampScore(input.value);
+    }
+    const totalEl = document.getElementById(`gridTotal_${playerId}`);
+    if (totalEl) totalEl.innerText = total;
+}
+
+function syncInputs(playerId, hole, score) {
+    const mainInput = document.getElementById(`scoreInput_${playerId}`);
+    const gridInput = document.getElementById(`grid_${playerId}_${hole}`);
+
+    if (mainInput && String(currentHole()) === String(hole)) {
+        mainInput.value = score;
+    }
+
+    if (gridInput) {
+        gridInput.value = score;
+    }
+
+    updateGridTotal(playerId);
 }
 
 function changeHole() {
@@ -107,10 +197,7 @@ function changeHole() {
     fetch('/api/referee_hole_info', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-            match_filename: matchFilename,
-            hole: hole
-        })
+        body:JSON.stringify({ match_filename: matchFilename, hole: hole })
     })
     .then(r => r.json())
     .then(data => {
@@ -124,17 +211,13 @@ function changeHole() {
         fetch('/api/referee_get_score', {
             method:'POST',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-                match_filename: matchFilename,
-                player_id: playerId,
-                hole: hole
-            })
+            body:JSON.stringify({ match_filename: matchFilename, player_id: playerId, hole: hole })
         })
         .then(r => r.json())
         .then(data => {
-            const input = document.getElementById(`scoreInput_${playerId}`);
-            if (input) input.value = data.status === 'success' ? clampScore(data.score) : 0;
-            setStatus(playerId, '自動儲存');
+            const score = data.status === 'success' ? clampScore(data.score) : 0;
+            syncInputs(playerId, hole, score);
+            setStatus(playerId, '成績自動儲存');
         });
     });
 }
@@ -145,21 +228,34 @@ function changeScore(playerId, delta) {
     value += delta;
     if (value < 0) value = 0;
     input.value = value;
-    saveScore(playerId, value);
+    saveScore(playerId, currentHole(), value);
 }
 
 function manualScore(playerId, value) {
-    const input = document.getElementById(`scoreInput_${playerId}`);
     const score = clampScore(value);
+    const input = document.getElementById(`scoreInput_${playerId}`);
     input.value = score;
 
     clearTimeout(savingTimers[playerId]);
     savingTimers[playerId] = setTimeout(() => {
-        saveScore(playerId, score);
+        saveScore(playerId, currentHole(), score);
     }, 250);
 }
 
-function saveScore(playerId, score) {
+function manualGridScore(playerId, hole, value) {
+    const input = document.getElementById(`grid_${playerId}_${hole}`);
+    const score = clampScore(value);
+    input.value = score;
+    syncInputs(playerId, hole, score);
+
+    const key = `${playerId}_${hole}`;
+    clearTimeout(gridTimers[key]);
+    gridTimers[key] = setTimeout(() => {
+        saveScore(playerId, hole, score);
+    }, 250);
+}
+
+function saveScore(playerId, hole, score) {
     setStatus(playerId, '儲存中...');
 
     fetch('/api/referee_update_score', {
@@ -168,24 +264,44 @@ function saveScore(playerId, score) {
         body:JSON.stringify({
             match_filename: matchFilename,
             player_id: playerId,
-            hole: currentHole(),
+            hole: hole,
             score: score
         })
     })
     .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
-            const input = document.getElementById(`scoreInput_${playerId}`);
-            if (input) input.value = clampScore(data.score);
+            syncInputs(playerId, hole, clampScore(data.score));
             setStatus(playerId, '已儲存');
         } else {
             setStatus(playerId, '儲存失敗');
             alert(data.message || '儲存失敗');
         }
     })
-    .catch(() => {
-        setStatus(playerId, '連線失敗');
-    });
+    .catch(() => setStatus(playerId, '連線失敗'));
+}
+
+function saveNoteDebounced(playerId, note) {
+    setNoteStatus(playerId, '備註儲存中...');
+
+    clearTimeout(noteTimers[playerId]);
+    noteTimers[playerId] = setTimeout(() => {
+        fetch('/api/referee_update_note', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                match_filename: matchFilename,
+                player_id: playerId,
+                note: note
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') setNoteStatus(playerId, '備註已儲存');
+            else setNoteStatus(playerId, '備註儲存失敗');
+        })
+        .catch(() => setNoteStatus(playerId, '備註連線失敗'));
+    }, 350);
 }
 </script>
 </body>
