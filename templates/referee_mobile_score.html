@@ -22,7 +22,7 @@
 <div class="page">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <a href="/referee/select/{{ match_filename }}" class="btn btn-outline-secondary btn-sm">← 重選選手</a>
-        <a href="/referee/overview/{{ match_filename }}?players={{ players | map(attribute='id') | join(',') }}" class="btn btn-outline-primary btn-sm">總覽</a>
+        <a href="/referee/overview/{{ match_filename }}?players={{ players | map(attribute='id') | join(',') }}&hole=" id="goOverviewBtn" class="btn btn-outline-primary btn-sm">總覽</a>
     </div>
 
     <div class="card shadow-sm mb-3 sticky-top-card">
@@ -128,6 +128,17 @@
 </div>
 
 <script>
+
+const urlParams = new URLSearchParams(window.location.search);
+const savedHole = urlParams.get("hole");
+
+document.addEventListener("DOMContentLoaded", function() {
+    if (savedHole) {
+        const sel = document.getElementById("holeSelect");
+        if (sel) sel.value = savedHole;
+    }
+});
+
 const matchFilename = "{{ match_filename }}";
 const selectedPlayers = [
     {% for p in players %}
@@ -302,6 +313,17 @@ function saveNoteDebounced(playerId, note) {
         .catch(() => setNoteStatus(playerId, '備註連線失敗'));
     }, 350);
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+    const btn = document.getElementById("goOverviewBtn");
+    if (btn) {
+        btn.addEventListener("click", function(){
+            const hole = document.getElementById("holeSelect").value;
+            this.href = this.href + hole;
+        });
+    }
+});
+
 </script>
 </body>
 </html>
