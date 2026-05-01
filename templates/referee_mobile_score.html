@@ -22,7 +22,7 @@
 <div class="page">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <a href="/referee/select/{{ match_filename }}" class="btn btn-outline-secondary btn-sm">← 重選選手</a>
-        <a href="/referee/overview/{{ match_filename }}" class="btn btn-outline-primary btn-sm">總覽</a>
+        <a href="/referee/overview/{{ match_filename }}?players={{ players | map(attribute='id') | join(',') }}" class="btn btn-outline-primary btn-sm">總覽</a>
     </div>
 
     <div class="card shadow-sm mb-3 sticky-top-card">
