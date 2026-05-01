@@ -555,14 +555,23 @@ def referee_mobile_overview(match_filename):
     if not os.path.exists(path):
         return "找不到賽事檔案", 404
 
+    selected_players_query = request.args.get("players", "").strip()
+
     course = load_course_by_filename(match_filename)
     players = sorted_players(course)
+
+    if selected_players_query:
+        back_to_score_url = "/referee/score/" + match_filename + "?players=" + selected_players_query
+    else:
+        back_to_score_url = "/referee/select/" + match_filename
 
     return render_template(
         "referee_mobile_overview.html",
         match_filename=match_filename,
         course=course,
-        players=players
+        players=players,
+        selected_players_query=selected_players_query,
+        back_to_score_url=back_to_score_url
     )
 
 
