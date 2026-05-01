@@ -218,12 +218,22 @@
                                 </div>
 
                                 <div class="col-md-7">
-                                    <label class="form-label">已選四人預覽</label>
+                                    <div class="d-flex justify-content-between align-items-end gap-2 mb-2">
+                                        <div class="flex-grow-1">
+                                            <label class="form-label">預覽洞數</label>
+                                            <select class="form-select form-select-sm" id="fourPreviewHole" onchange="updateFourPreview()">
+                                                {% for i in range(1, 13) %}<option value="{{ i }}">H{{ i }}</option>{% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="text-end">
+                                            <label class="form-label">已選四人預覽</label>
+                                        </div>
+                                    </div>
                                     <div class="table-responsive">
                                         <table class="table table-bordered table-sm preview-table text-nowrap mb-2">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th>#</th><th>編號</th><th>縣市</th><th>學校</th><th>組別</th><th>姓名</th><th>總桿</th><th>±</th>
+                                                    <th>#</th><th>編號</th><th>縣市</th><th>學校</th><th>組別</th><th>姓名</th><th>衣服備註</th><th>當下桿數</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="fourPreviewBody">
@@ -232,12 +242,13 @@
                                         </table>
                                     </div>
 
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="refreshFourPreviewOnly()">重新整理預覽</button>
                                         <button class="btn btn-outline-secondary btn-sm" onclick="clearFourPreview()">清空選擇</button>
                                         <button class="btn btn-outline-success btn-sm" onclick="copyFourPreviewText()">複製四人名單</button>
                                     </div>
 
-                                    <div class="small text-muted mt-2">此功能只用於後台快速查詢與預覽，不會影響輸出 JSON。</div>
+                                    <div class="small text-muted mt-2">此功能只更新預覽，不會重整整個網頁，也不影響 JSON 輸出。</div>
                                 </div>
                             </div>
                         </div>
@@ -522,7 +533,7 @@ document.addEventListener("DOMContentLoaded", function() {
     refreshPairPlayers('lower');
     updatePersonalPreview();
     updatePairPreview();
-    updateFourPreview();
+    restoreFourPreviewSelection();
 });
 
 socket.on('leaderboard_update', () => {
@@ -751,6 +762,30 @@ function updatePairPreview() {
 }
 
 
+
+function restoreFourPreviewSelection() {
+    const saved = sessionStorage.getItem('fourPreviewIds');
+    const savedHole = sessionStorage.getItem('fourPreviewHole');
+
+    if (savedHole && document.getElementById('fourPreviewHole')) {
+        document.getElementById('fourPreviewHole').value = savedHole;
+    }
+
+    if (!saved) {
+        updateFourPreview();
+        return;
+    }
+
+    try {
+        const ids = JSON.parse(saved);
+        document.querySelectorAll('.four-player-check').forEach(box => {
+            box.checked = ids.includes(String(box.value));
+        });
+    } catch (e) {}
+
+    updateFourPreview();
+}
+
 function filterFourPlayerList() {
     const keyword = (document.getElementById('fourPlayerSearch')?.value || '').toLowerCase().trim();
     document.querySelectorAll('#fourPlayerList .four-player-row').forEach(row => {
@@ -788,9 +823,15 @@ function updateFourPreview() {
         return;
     }
 
+    const previewHole = document.getElementById('fourPreviewHole')?.value || "1";
+
     body.innerHTML = ids.map((id, index) => {
         const p = getPlayerById(id);
         if (!p) return '';
+
+        const scores = p.scores || {};
+        const currentScore = scores[String(previewHole)] ?? 0;
+        const note = p.referee_note || '';
 
         return `
             <tr>
@@ -800,11 +841,29 @@ function updateFourPreview() {
                 <td>${p.school || ''}</td>
                 <td>${p.group || ''}</td>
                 <td class="fw-bold">${p.name || ''}</td>
-                <td class="fw-bold">${p.total || 0}</td>
-                <td class="fw-bold">${p.plus_minus || ''}</td>
+                <td>${note}</td>
+                <td class="fw-bold">${currentScore}</td>
             </tr>
         `;
     }).join('');
+}
+
+
+function refreshFourPreviewOnly() {
+    const ids = selectedFourIds();
+
+    if (ids.length === 0) {
+        alert('尚未選擇選手');
+        return;
+    }
+
+    const active = document.querySelector('.nav-link.active');
+    if (active) localStorage.setItem('activeTab', active.getAttribute('data-bs-target'));
+
+    sessionStorage.setItem('fourPreviewIds', JSON.stringify(ids));
+    sessionStorage.setItem('fourPreviewHole', document.getElementById('fourPreviewHole')?.value || "1");
+
+    window.location.reload();
 }
 
 function clearFourPreview() {
@@ -820,10 +879,17 @@ function copyFourPreviewText() {
         return;
     }
 
+    const previewHole = document.getElementById('fourPreviewHole')?.value || "1";
+
     const text = ids.map((id, index) => {
         const p = getPlayerById(id);
         if (!p) return '';
-        return `${index + 1}. ${p.number || ''}｜${p.city || ''}｜${p.school || ''}｜${p.group || ''}｜${p.name || ''}｜總桿:${p.total || 0}｜±:${p.plus_minus || ''}`;
+
+        const scores = p.scores || {};
+        const currentScore = scores[String(previewHole)] ?? 0;
+        const note = p.referee_note || '';
+
+        return `${index + 1}. ${p.number || ''}｜${p.city || ''}｜${p.school || ''}｜${p.group || ''}｜${p.name || ''}｜備註:${note}｜H${previewHole}:${currentScore}`;
     }).join('\\n');
 
     navigator.clipboard.writeText(text).then(() => {
