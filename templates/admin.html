@@ -14,6 +14,10 @@
         .form-label { font-size: 0.9rem; font-weight: 600; color: #495057; }
         .edit-input { min-width: 110px; }
         .preview-table th, .preview-table td { font-size: 0.85rem; vertical-align: middle; }
+        .four-player-box { max-height: 320px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 10px; }
+        .four-player-row { cursor: pointer; }
+        .four-player-row:hover { background-color: #f1f8f4; }
+        .four-player-check { width: 20px; height: 20px; }
     </style>
 </head>
 
@@ -178,6 +182,67 @@
                 </script>
 
                 <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card p-3 border-success border-opacity-25">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold text-success mb-0">四人快速預覽</h6>
+                                <span class="badge bg-success" id="fourSelectedCount">已選 0 / 4</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label class="form-label">搜尋選手</label>
+                                    <input type="text" class="form-control mb-2" id="fourPlayerSearch"
+                                           placeholder="輸入編號、姓名、學校、組別"
+                                           oninput="filterFourPlayerList()">
+
+                                    <div class="four-player-box">
+                                        <div class="list-group list-group-flush" id="fourPlayerList">
+                                            {% for player in players %}
+                                            <label class="list-group-item four-player-row"
+                                                   data-search="{{ player.number }} {{ player.city }} {{ player.school }} {{ player.group }} {{ player.name }}">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <input class="form-check-input four-player-check"
+                                                           type="checkbox"
+                                                           value="{{ player.id }}"
+                                                           onchange="toggleFourPreview(this)">
+                                                    <div>
+                                                        <div class="fw-bold">{{ player.number }}｜{{ player.name }}</div>
+                                                        <div class="small text-muted">{{ player.city }}｜{{ player.school }}｜{{ player.group }}</div>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-7">
+                                    <label class="form-label">已選四人預覽</label>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm preview-table text-nowrap mb-2">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>#</th><th>編號</th><th>縣市</th><th>學校</th><th>組別</th><th>姓名</th><th>總桿</th><th>±</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="fourPreviewBody">
+                                                <tr><td colspan="8" class="text-center text-muted">尚未選擇選手</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="clearFourPreview()">清空選擇</button>
+                                        <button class="btn btn-outline-success btn-sm" onclick="copyFourPreviewText()">複製四人名單</button>
+                                    </div>
+
+                                    <div class="small text-muted mt-2">此功能只用於後台快速查詢與預覽，不會影響輸出 JSON。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-md-6 border-end">
                         <h6 class="fw-bold text-success mb-3">個人 JSON 輸出</h6>
 
@@ -457,6 +522,7 @@ document.addEventListener("DOMContentLoaded", function() {
     refreshPairPlayers('lower');
     updatePersonalPreview();
     updatePairPreview();
+    updateFourPreview();
 });
 
 socket.on('leaderboard_update', () => {
@@ -683,6 +749,90 @@ function updatePairPreview() {
             <td>${lower.city}</td><td>${lower.school}</td><td class="fw-bold">${lower.player_name}</td>
         </tr>`;
 }
+
+
+function filterFourPlayerList() {
+    const keyword = (document.getElementById('fourPlayerSearch')?.value || '').toLowerCase().trim();
+    document.querySelectorAll('#fourPlayerList .four-player-row').forEach(row => {
+        const text = (row.dataset.search || '').toLowerCase();
+        row.style.display = text.includes(keyword) ? '' : 'none';
+    });
+}
+
+function selectedFourIds() {
+    return Array.from(document.querySelectorAll('.four-player-check:checked')).map(x => String(x.value));
+}
+
+function toggleFourPreview(box) {
+    const checked = selectedFourIds();
+
+    if (checked.length > 4) {
+        box.checked = false;
+        alert('最多只能選 4 位選手');
+        return;
+    }
+
+    updateFourPreview();
+}
+
+function updateFourPreview() {
+    const ids = selectedFourIds();
+    const body = document.getElementById('fourPreviewBody');
+    const count = document.getElementById('fourSelectedCount');
+
+    if (count) count.innerText = `已選 ${ids.length} / 4`;
+    if (!body) return;
+
+    if (ids.length === 0) {
+        body.innerHTML = `<tr><td colspan="8" class="text-center text-muted">尚未選擇選手</td></tr>`;
+        return;
+    }
+
+    body.innerHTML = ids.map((id, index) => {
+        const p = getPlayerById(id);
+        if (!p) return '';
+
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${p.number || ''}</td>
+                <td>${p.city || ''}</td>
+                <td>${p.school || ''}</td>
+                <td>${p.group || ''}</td>
+                <td class="fw-bold">${p.name || ''}</td>
+                <td class="fw-bold">${p.total || 0}</td>
+                <td class="fw-bold">${p.plus_minus || ''}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function clearFourPreview() {
+    document.querySelectorAll('.four-player-check').forEach(box => box.checked = false);
+    updateFourPreview();
+}
+
+function copyFourPreviewText() {
+    const ids = selectedFourIds();
+
+    if (ids.length === 0) {
+        alert('尚未選擇選手');
+        return;
+    }
+
+    const text = ids.map((id, index) => {
+        const p = getPlayerById(id);
+        if (!p) return '';
+        return `${index + 1}. ${p.number || ''}｜${p.city || ''}｜${p.school || ''}｜${p.group || ''}｜${p.name || ''}｜總桿:${p.total || 0}｜±:${p.plus_minus || ''}`;
+    }).join('\\n');
+
+    navigator.clipboard.writeText(text).then(() => {
+        alert('已複製四人名單');
+    }).catch(() => {
+        alert(text);
+    });
+}
+
 
 function outputPersonalJson() {
     fetch('/api/output_personal_json', {
