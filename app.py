@@ -562,7 +562,7 @@ def referee_mobile_overview(match_filename):
 
     if selected_players_query:
         selected_hole = request.args.get("hole", "1")
-    back_to_score_url = f"/referee/score/{match_filename}?players={selected_players_query}&hole={selected_hole}"
+        back_to_score_url = f"/referee/score/{match_filename}?players={selected_players_query}&hole={selected_hole}"
     else:
         back_to_score_url = "/referee/select/" + match_filename
 
