@@ -12,6 +12,8 @@
         .score-input { width: 92px; text-align:center; font-size: 1.5rem; font-weight: 800; }
         .player-card { border-left: 6px solid #198754; }
         .hole-select { font-size:1.25rem; font-weight:700; }
+        .hole-btn { width: 38px; height: 38px; border-radius: 50%; padding: 0; font-weight: 700; }
+        .hole-btn.active-hole { background:#198754; color:#fff; border-color:#198754; }
         .note-input { font-size: 0.9rem; min-height: 38px; padding: 4px 8px; }
         .mini-score-input { width: 58px; text-align:center; font-size: 1rem; font-weight:700; padding: 4px; }
         th, td { vertical-align: middle; }
@@ -28,12 +30,16 @@
     <div class="card shadow-sm mb-3 sticky-top-card">
         <div class="card-body">
             <h5 class="fw-bold mb-2">{{ course.match_name }}</h5>
-            <label class="form-label fw-bold">球道選擇</label>
-            <select class="form-select form-select-lg hole-select" id="holeSelect" onchange="changeHole()">
+            <label class="form-label fw-bold">目前球道</label>
+            <input type="hidden" id="holeSelect" value="1">
+            <div class="d-flex flex-wrap gap-2 mb-2" id="holeButtons">
                 {% for i in range(1, 13) %}
-                <option value="{{ i }}">H{{ i }}</option>
+                <button type="button"
+                        class="btn btn-outline-secondary hole-btn"
+                        id="holeBtn_{{ i }}"
+                        onclick="selectHole('{{ i }}')">{{ i }}</button>
                 {% endfor %}
-            </select>
+            </div>
 
             <div class="row text-center mt-3">
                 <div class="col-6">
@@ -144,9 +150,29 @@ let noteTimers = {};
 let gridTimers = {};
 
 document.addEventListener("DOMContentLoaded", function() {
-    changeHole();
+    const savedHole = new URLSearchParams(window.location.search).get("hole") || "1";
+    selectHole(savedHole);
     selectedPlayers.forEach(playerId => updateGridTotal(playerId));
 });
+
+
+function selectHole(hole) {
+    const input = document.getElementById('holeSelect');
+    if (input) input.value = String(hole);
+
+    document.querySelectorAll('.hole-btn').forEach(btn => {
+        btn.classList.remove('active-hole', 'btn-success');
+        btn.classList.add('btn-outline-secondary');
+    });
+
+    const active = document.getElementById(`holeBtn_${hole}`);
+    if (active) {
+        active.classList.add('active-hole', 'btn-success');
+        active.classList.remove('btn-outline-secondary');
+    }
+
+    changeHole();
+}
 
 function currentHole() {
     return document.getElementById('holeSelect').value;
@@ -359,11 +385,8 @@ function movePlayerDown(playerId) {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    const savedHole = new URLSearchParams(window.location.search).get("hole");
-    if (savedHole) {
-        const sel = document.getElementById("holeSelect");
-        if (sel) sel.value = savedHole;
-    }
+    const savedHole = new URLSearchParams(window.location.search).get("hole") || "1";
+    selectHole(savedHole);
 
     const btn = document.getElementById("goOverviewBtn");
     if (btn) {
