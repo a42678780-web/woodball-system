@@ -53,10 +53,14 @@
     </div>
 
     {% for p in players %}
-    <div class="card shadow-sm mb-3 player-card" data-player-id="{{ p.id }}">
+    <div class="card shadow-sm mb-3 player-card" id="playerCard_{{ p.id }}" data-player-id="{{ p.id }}">
         <div class="card-body">
             <div class="fw-bold fs-5">{{ p.number }}｜{{ p.name }}</div>
             <div class="small text-muted mb-2">{{ p.city }}｜{{ p.school }}｜{{ p.group }}</div>
+            <div class="d-flex gap-2 mb-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="movePlayerUp('{{ p.id }}')">↑ 上移</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="movePlayerDown('{{ p.id }}')">↓ 下移</button>
+            </div>
 
             <label class="form-label fw-bold small mb-1">特徵備註</label>
             <textarea class="form-control note-input mb-1"
@@ -101,7 +105,7 @@
                     </thead>
                     <tbody>
                         {% for p in players %}
-                        <tr>
+                        <tr id="gridRow_{{ p.id }}">
                             <td class="fw-bold">{{ p.number }}｜{{ p.name }}</td>
                             {% for i in range(1, 13) %}
                             <td>
@@ -128,17 +132,6 @@
 </div>
 
 <script>
-
-const urlParams = new URLSearchParams(window.location.search);
-const savedHole = urlParams.get("hole");
-
-document.addEventListener("DOMContentLoaded", function() {
-    if (savedHole) {
-        const sel = document.getElementById("holeSelect");
-        if (sel) sel.value = savedHole;
-    }
-});
-
 const matchFilename = "{{ match_filename }}";
 const selectedPlayers = [
     {% for p in players %}
@@ -314,14 +307,72 @@ function saveNoteDebounced(playerId, note) {
     }, 350);
 }
 
+function currentPlayerOrder() {
+    return Array.from(document.querySelectorAll('.player-card')).map(card => card.dataset.playerId).filter(Boolean);
+}
+
+function updateOverviewLinkOrder() {
+    const btn = document.getElementById("goOverviewBtn");
+    if (!btn) return;
+
+    const ids = currentPlayerOrder().join(',');
+    const hole = document.getElementById("holeSelect")?.value || "1";
+    btn.href = `/referee/overview/${matchFilename}?players=${ids}&hole=${hole}`;
+}
+
+function swapGridRows(idA, idB) {
+    const rowA = document.getElementById(`gridRow_${idA}`);
+    const rowB = document.getElementById(`gridRow_${idB}`);
+    if (!rowA || !rowB) return;
+
+    if (rowA.nextSibling === rowB) {
+        rowB.parentNode.insertBefore(rowB, rowA);
+    } else if (rowB.nextSibling === rowA) {
+        rowA.parentNode.insertBefore(rowA, rowB);
+    }
+}
+
+function movePlayerUp(playerId) {
+    const card = document.getElementById(`playerCard_${playerId}`);
+    if (!card) return;
+
+    const prev = card.previousElementSibling;
+    if (prev && prev.classList.contains('player-card')) {
+        const prevId = prev.dataset.playerId;
+        card.parentNode.insertBefore(card, prev);
+        swapGridRows(playerId, prevId);
+        updateOverviewLinkOrder();
+    }
+}
+
+function movePlayerDown(playerId) {
+    const card = document.getElementById(`playerCard_${playerId}`);
+    if (!card) return;
+
+    const next = card.nextElementSibling;
+    if (next && next.classList.contains('player-card')) {
+        const nextId = next.dataset.playerId;
+        card.parentNode.insertBefore(next, card);
+        swapGridRows(playerId, nextId);
+        updateOverviewLinkOrder();
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function() {
+    const savedHole = new URLSearchParams(window.location.search).get("hole");
+    if (savedHole) {
+        const sel = document.getElementById("holeSelect");
+        if (sel) sel.value = savedHole;
+    }
+
     const btn = document.getElementById("goOverviewBtn");
     if (btn) {
-        btn.addEventListener("click", function(){
-            const hole = document.getElementById("holeSelect").value;
-            this.href = this.href + hole;
+        btn.addEventListener("click", function() {
+            updateOverviewLinkOrder();
         });
     }
+
+    updateOverviewLinkOrder();
 });
 
 </script>
