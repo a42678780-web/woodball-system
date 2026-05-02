@@ -23,7 +23,8 @@
     <div class="card shadow-sm">
         <div class="card-body">
             <h5 class="fw-bold mb-2">第二頁：勾選選手</h5>
-            <div class="text-muted small mb-3">最多勾選 4 位，勾選後進入計分頁。</div>
+            <div class="text-muted small mb-2">最多勾選 4 位，進入後會依照你點選的順序顯示。</div>
+<div class="alert alert-light border small py-2 mb-3">選取順序：<span id="selectedOrderText">尚未選擇</span></div>
 
             <div class="list-group">
                 {% for p in players %}
@@ -48,27 +49,56 @@
 </div>
 
 <script>
+let selectedOrder = [];
+
 function checkedBoxes() {
     return Array.from(document.querySelectorAll('.player-check:checked'));
 }
 
+function updateSelectedOrderText() {
+    const el = document.getElementById('selectedOrderText');
+    if (!el) return;
+
+    if (selectedOrder.length === 0) {
+        el.innerText = '尚未選擇';
+        return;
+    }
+
+    const names = selectedOrder.map(id => {
+        const box = document.querySelector(`.player-check[value="${id}"]`);
+        const row = box ? box.closest('.player-row') : null;
+        const title = row ? row.querySelector('.fw-bold')?.innerText : id;
+        return title || id;
+    });
+
+    el.innerText = names.join(' → ');
+}
+
 function limitSelect(box) {
-    const checked = checkedBoxes();
-    if (checked.length > 4) {
+    const id = String(box.value);
+
+    if (box.checked) {
+        if (!selectedOrder.includes(id)) selectedOrder.push(id);
+    } else {
+        selectedOrder = selectedOrder.filter(x => x !== id);
+    }
+
+    if (selectedOrder.length > 4) {
         box.checked = false;
+        selectedOrder = selectedOrder.filter(x => x !== id);
         alert('最多只能勾選 4 位選手');
     }
+
+    updateSelectedOrderText();
 }
 
 function goScorePage() {
-    const checked = checkedBoxes();
-
-    if (checked.length < 1) {
+    if (selectedOrder.length < 1) {
         alert('請至少勾選 1 位選手');
         return;
     }
 
-    const ids = checked.map(x => x.value).join(',');
+    const ids = selectedOrder.join(',');
     window.location.href = `/referee/score/{{ match_filename }}?players=${ids}`;
 }
 </script>
