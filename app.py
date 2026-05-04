@@ -838,6 +838,29 @@ def api_delete_match():
     })
 
 
+
+@app.route("/api/update_match_name", methods=["POST"])
+def api_update_match_name():
+    data = request.get_json()
+    match_name = data.get("match_name", "").strip()
+
+    if not match_name:
+        return jsonify({
+            "status": "error",
+            "message": "賽事名稱不可空白"
+        })
+
+    filename = get_current_match_file()
+    course = load_course_by_filename(filename)
+    course["match_name"] = match_name
+    save_course(course, filename)
+
+    return jsonify({
+        "status": "success",
+        "match_name": match_name
+    })
+
+
 @app.route("/api/update_course", methods=["POST"])
 def api_update_course():
     data = request.get_json()
