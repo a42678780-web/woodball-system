@@ -544,11 +544,8 @@ function updateMatchName() {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
 <script>
-const socket = io();
-
 document.addEventListener("DOMContentLoaded", function() {
     let activeTab = localStorage.getItem('activeTab');
 
@@ -580,12 +577,6 @@ document.addEventListener("DOMContentLoaded", function() {
     updatePairPreview();
     restoreFourPreviewSelection();
 });
-
-socket.on('leaderboard_update', () => {
-    // 裁判端更新成績時，後台不自動刷新。
-    // 如需查看最新資料，請手動按 F5 重新整理。
-});
-
 function createNewMatch() {
     const matchName = document.getElementById('newMatchName').value.trim();
     const matchType = document.getElementById('newMatchType').value;
