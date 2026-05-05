@@ -5,6 +5,7 @@ import json
 import csv
 import io
 from datetime import datetime
+from urllib.parse import unquote
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "woodball_secret"
@@ -72,6 +73,50 @@ def get_current_match_file():
             json.dump(course, f, ensure_ascii=False, indent=4)
 
     set_current_match_file(filename)
+    return filename
+
+
+
+def normalize_match_key(value):
+    text = unquote(str(value or "")).strip()
+    text = text.replace(".json", "")
+    remove_chars = '\\/:*?"<>|'
+    for ch in remove_chars:
+        text = text.replace(ch, "")
+    text = text.replace(" ", "").replace("_", "")
+    return text.lower()
+
+
+def resolve_match_filename(filename):
+    filename = unquote(str(filename or "")).strip()
+
+    if not filename:
+        return get_current_match_file()
+
+    direct_path = os.path.join(MATCH_DIR, filename)
+    if os.path.exists(direct_path):
+        return filename
+
+    if not filename.endswith(".json"):
+        direct_path = os.path.join(MATCH_DIR, filename + ".json")
+        if os.path.exists(direct_path):
+            return filename + ".json"
+
+    target_key = normalize_match_key(filename)
+
+    for item in get_all_matches():
+        real_filename = item.get("filename", "")
+        match_name = item.get("name", "")
+
+        if normalize_match_key(real_filename) == target_key:
+            return real_filename
+
+        if normalize_match_key(match_name) == target_key:
+            return real_filename
+
+        if normalize_match_key(safe_filename(match_name)) == target_key:
+            return real_filename
+
     return filename
 
 
@@ -500,6 +545,7 @@ def referee_match_select():
 
 @app.route("/referee/select/<match_filename>")
 def referee_player_select(match_filename):
+    match_filename = resolve_match_filename(match_filename)
     path = os.path.join(MATCH_DIR, match_filename)
 
     if not os.path.exists(path):
@@ -518,6 +564,7 @@ def referee_player_select(match_filename):
 
 @app.route("/referee/score/<match_filename>")
 def referee_mobile_score(match_filename):
+    match_filename = resolve_match_filename(match_filename)
     path = os.path.join(MATCH_DIR, match_filename)
 
     if not os.path.exists(path):
@@ -550,6 +597,7 @@ def referee_mobile_score(match_filename):
 
 @app.route("/referee/overview/<match_filename>")
 def referee_mobile_overview(match_filename):
+    match_filename = resolve_match_filename(match_filename)
     path = os.path.join(MATCH_DIR, match_filename)
 
     if not os.path.exists(path):
@@ -580,7 +628,7 @@ def referee_mobile_overview(match_filename):
 def api_referee_update_note():
     data = request.get_json()
 
-    match_filename = data.get("match_filename", "")
+    match_filename = resolve_match_filename(data.get("match_filename", ""))
     player_id = str(data.get("player_id", ""))
     note = str(data.get("note", ""))
 
@@ -603,7 +651,7 @@ def api_referee_update_note():
 @app.route("/api/referee_get_score", methods=["POST"])
 def api_referee_get_score():
     data = request.get_json()
-    match_filename = data.get("match_filename", "")
+    match_filename = resolve_match_filename(data.get("match_filename", ""))
     player_id = str(data.get("player_id", ""))
     hole = str(data.get("hole", "1"))
 
@@ -634,7 +682,7 @@ def api_referee_get_score():
 def api_referee_update_score():
     data = request.get_json()
 
-    match_filename = data.get("match_filename", "")
+    match_filename = resolve_match_filename(data.get("match_filename", ""))
     player_id = str(data.get("player_id", ""))
     hole = str(data.get("hole", ""))
     score = data.get("score", 0)
@@ -673,7 +721,7 @@ def api_referee_update_score():
 @app.route("/api/referee_hole_info", methods=["POST"])
 def api_referee_hole_info():
     data = request.get_json()
-    match_filename = data.get("match_filename", "")
+    match_filename = resolve_match_filename(data.get("match_filename", ""))
     hole = str(data.get("hole", "1"))
 
     path = os.path.join(MATCH_DIR, match_filename)
