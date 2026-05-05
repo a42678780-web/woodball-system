@@ -563,6 +563,8 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
+    restoreOutputControlState();
+
     const baseUrl = window.location.origin;
     const urlPersonal = document.getElementById('urlPersonal');
     const urlDouble = document.getElementById('urlDouble');
@@ -829,6 +831,40 @@ function restoreFourPreviewSelection() {
     updateFourPreview();
 }
 
+
+function saveOutputControlState() {
+    const keys = ['personalHole', 'pairHole', 'fourPreviewHole', 'personalPlayer', 'upperGroup', 'lowerGroup', 'upperPlayer', 'lowerPlayer', 'rankingMatch', 'rankingGroup'];
+    const state = {};
+
+    keys.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) state[id] = el.value;
+    });
+
+    localStorage.setItem('outputControlState', JSON.stringify(state));
+}
+
+function restoreOutputControlState() {
+    const raw = localStorage.getItem('outputControlState');
+    if (!raw) return;
+
+    try {
+        const state = JSON.parse(raw);
+        Object.keys(state).forEach(id => {
+            const el = document.getElementById(id);
+            if (el && state[id] !== undefined) {
+                el.value = state[id];
+            }
+        });
+    } catch(e) {}
+}
+
+document.addEventListener('change', function(e) {
+    if (e.target && ['personalHole', 'pairHole', 'fourPreviewHole', 'personalPlayer', 'upperGroup', 'lowerGroup', 'upperPlayer', 'lowerPlayer', 'rankingMatch', 'rankingGroup'].includes(e.target.id)) {
+        saveOutputControlState();
+    }
+});
+
 function filterFourPlayerList() {
     const keyword = (document.getElementById('fourPlayerSearch')?.value || '').toLowerCase().trim();
     document.querySelectorAll('#fourPlayerList .four-player-row').forEach(row => {
@@ -859,6 +895,9 @@ function updateFourPreview() {
     const count = document.getElementById('fourSelectedCount');
 
     if (count) count.innerText = `已選 ${ids.length} / 4`;
+    sessionStorage.setItem('fourPreviewIds', JSON.stringify(ids));
+    sessionStorage.setItem('fourPreviewHole', document.getElementById('fourPreviewHole')?.value || "1");
+    saveOutputControlState();
     if (!body) return;
 
     if (ids.length === 0) {
@@ -893,25 +932,14 @@ function updateFourPreview() {
 
 
 function refreshFourPreviewOnly() {
-    const ids = selectedFourIds();
-
-    if (ids.length === 0) {
-        alert('尚未選擇選手');
-        return;
-    }
-
-    const active = document.querySelector('.nav-link.active');
-    if (active) localStorage.setItem('activeTab', active.getAttribute('data-bs-target'));
-
-    sessionStorage.setItem('fourPreviewIds', JSON.stringify(ids));
-    sessionStorage.setItem('fourPreviewHole', document.getElementById('fourPreviewHole')?.value || "1");
-
-    window.location.reload();
+    updateFourPreview();
 }
 
 function clearFourPreview() {
     document.querySelectorAll('.four-player-check').forEach(box => box.checked = false);
+    sessionStorage.removeItem('fourPreviewIds');
     updateFourPreview();
+    saveOutputControlState();
 }
 
 function copyFourPreviewText() {
